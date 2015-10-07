@@ -30,7 +30,7 @@ def get_xml_root(filename=False, string=False):
         tree = ET.parse(filename)
         return tree.getroot()
     if string:
-        return ET.fromstring(string)
+        return ET.fromstring(string.encode('utf-8'))
 
 
 # Walk an XML ElementTree ("root"), and return a YAML string
