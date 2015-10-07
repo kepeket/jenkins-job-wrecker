@@ -51,15 +51,15 @@ def root_to_yaml(root, name):
 
     # Handle each top-level XML element with custom "handle_*" functions in
     # job_handlers.py.
+    raw_xmls = []
     for child in root:
         handler_name = 'handle_%s' % child.tag.lower()
         try:
             handler = getattr(job_handlers, handler_name)
         except AttributeError:
-            # Show our YAML translation so far:
-            print dump(build, default_flow_style=False)
-            # ... and report what still needs to be done:
-            raise NotImplementedError("write a function for %s" % handler_name)
+            raw_xmls.append(ET.tostring(child).strip())
+            continue
+
         try:
             settings = handler(child)
 
@@ -72,6 +72,9 @@ def root_to_yaml(root, name):
         except Exception:
             print 'last called %s' % handler_name
             raise
+
+    if len(raw_xmls):
+        job['raw'] = {'xml': "\n".join(raw_xmls) + "\n"}
 
     return dump(build, default_flow_style=False)
 
