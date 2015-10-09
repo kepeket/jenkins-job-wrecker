@@ -411,7 +411,8 @@ def handle_builders(top):
                         (copy_element.text == 'true')
                 elif copy_element.tag == 'doNotFingerprintArtifacts':
                     # Not yet implemented in JJB
-                    # ADD RAW XML
+                    if copy_element.text != "false":
+                        raise NotImplementedError("cannot handle doNotFingerprintArtifacts != false")
                     continue
                 elif copy_element.tag == 'optional':
                     copyartifact[copy_element.tag] = \
