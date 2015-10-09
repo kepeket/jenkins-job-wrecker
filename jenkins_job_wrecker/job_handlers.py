@@ -130,7 +130,12 @@ def handle_scm(top):
                                                         len(list(child))))
 
             for setting in child[0]:
-                git[setting.tag] = setting.text
+                if setting.tag in ['url', 'name', 'refspec']:
+                    git[setting.tag] = setting.text
+                elif setting.tag == 'credentialsId':
+                    git['credentials-id'] = setting.text
+                else:
+                    raise NotImplementedError("cannot handle UserRemoteConfig setting %s" % setting.tag)
 
         elif child.tag == 'gitTool':
             git['git-tool'] = child.text
