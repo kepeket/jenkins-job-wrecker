@@ -377,64 +377,68 @@ def handle_axes(top):
 def handle_builders(top):
     builders = []
     for child in top:
+        try:
+            if child.tag == 'hudson.plugins.copyartifact.CopyArtifact':
+                copyartifact = {}
+                selectdict = {
+                    'StatusBuildSelector': 'last-successful',
+                    'LastCompletedBuildSelector': 'last-completed',
+                    'SpecificBuildSelector': 'specific-build',
+                    'SavedBuildSelector': 'last-saved',
+                    'TriggeredBuildSelector': 'upstream-build',
+                    'PermalinkBuildSelector': 'permalink',
+                    'WorkspaceSelector': 'workspace-latest',
+                    'ParameterizedBuildSelector': 'build-param',
+                    'DownstreamBuildSelector': 'downstream-build'}
+                for copy_element in child:
+                    if copy_element.tag == 'project':
+                        copyartifact[copy_element.tag] = copy_element.text
+                    elif copy_element.tag == 'filter':
+                        copyartifact[copy_element.tag] = copy_element.text
+                    elif copy_element.tag == 'target':
+                        copyartifact[copy_element.tag] = copy_element.text
+                    elif copy_element.tag == 'excludes':
+                        copyartifact['exclude-pattern'] = copy_element.text
+                    elif copy_element.tag == 'selector':
+                        select = copy_element.attrib['class']
+                        select = select.replace('hudson.plugins.copyartifact.', '')
+                        which_build = selectdict[select]
+                        copyartifact['which-build'] = which_build
+                        if which_build == 'build-param':
+                            copyartifact['param'] = copy_element.findtext('parameterName')
+                    elif copy_element.tag == 'flatten':
+                        copyartifact[copy_element.tag] = \
+                            (copy_element.text == 'true')
+                    elif copy_element.tag == 'doNotFingerprintArtifacts':
+                        # Not yet implemented in JJB
+                        if copy_element.text != "false":
+                            raise NotImplementedError("cannot handle doNotFingerprintArtifacts != false")
+                        continue
+                    elif copy_element.tag == 'optional':
+                        copyartifact[copy_element.tag] = \
+                            (copy_element.text == 'true')
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % copy_element.tag)
+                builders.append({'copyartifact': copyartifact})
 
-        if child.tag == 'hudson.plugins.copyartifact.CopyArtifact':
-            copyartifact = {}
-            selectdict = {
-                'StatusBuildSelector': 'last-successful',
-                'LastCompletedBuildSelector': 'last-completed',
-                'SpecificBuildSelector': 'specific-build',
-                'SavedBuildSelector': 'last-saved',
-                'TriggeredBuildSelector': 'upstream-build',
-                'PermalinkBuildSelector': 'permalink',
-                'WorkspaceSelector': 'workspace-latest',
-                'ParameterizedBuildSelector': 'build-param',
-                'DownstreamBuildSelector': 'downstream-build'}
-            for copy_element in child:
-                if copy_element.tag == 'project':
-                    copyartifact[copy_element.tag] = copy_element.text
-                elif copy_element.tag == 'filter':
-                    copyartifact[copy_element.tag] = copy_element.text
-                elif copy_element.tag == 'target':
-                    copyartifact[copy_element.tag] = copy_element.text
-                elif copy_element.tag == 'excludes':
-                    copyartifact['exclude-pattern'] = copy_element.text
-                elif copy_element.tag == 'selector':
-                    select = copy_element.attrib['class']
-                    select = select.replace('hudson.plugins.copyartifact.', '')
-                    which_build = selectdict[select]
-                    copyartifact['which-build'] = which_build
-                    if which_build == 'build-param':
-                        copyartifact['param'] = copy_element.findtext('parameterName')
-                elif copy_element.tag == 'flatten':
-                    copyartifact[copy_element.tag] = \
-                        (copy_element.text == 'true')
-                elif copy_element.tag == 'doNotFingerprintArtifacts':
-                    # Not yet implemented in JJB
-                    if copy_element.text != "false":
-                        raise NotImplementedError("cannot handle doNotFingerprintArtifacts != false")
-                    continue
-                elif copy_element.tag == 'optional':
-                    copyartifact[copy_element.tag] = \
-                        (copy_element.text == 'true')
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % copy_element.tag)
-            builders.append({'copyartifact': copyartifact})
+            elif child.tag == 'hudson.tasks.Shell':
+                for shell_element in child:
+                    # Assumption: there's only one <command> in this
+                    # <hudson.tasks.Shell>
+                    if shell_element.tag == 'command':
+                        shell = shell_element.text
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % shell_element.tag)
+                builders.append({'shell': shell})
 
-        elif child.tag == 'hudson.tasks.Shell':
-            for shell_element in child:
-                # Assumption: there's only one <command> in this
-                # <hudson.tasks.Shell>
-                if shell_element.tag == 'command':
-                    shell = shell_element.text
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % shell_element.tag)
-            builders.append({'shell': shell})
+            else:
+                raise NotImplementedError("cannot handle XML %s" % child.tag)
 
-        else:
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
+        except NotImplementedError, e:
+            print "going raw because: %s" % e
+            insert_rawxml(child, builders)
 
     return [['builders', builders]]
 
