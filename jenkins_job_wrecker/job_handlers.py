@@ -111,165 +111,172 @@ def handle_scm(top):
                 scms.append(handle_scm(scm)[0])
             return scms
 
+    scm = []
+
     if top.tag != 'hudson.plugins.git.GitSCM' and \
             top.attrib['class'] != 'hudson.plugins.git.GitSCM':
         raise NotImplementedError("%s scm not supported" % top.attrib['class'])
 
-    git = {}
+    try:
+        git = {}
 
-    for child in top:
+        for child in top:
 
-        if child.tag == 'configVersion':
-            continue    # we don't care
+            if child.tag == 'configVersion':
+                continue    # we don't care
 
-        elif child.tag == 'userRemoteConfigs':
-            if len(list(child)) != 1:
-                # expected "hudson.plugins.git.UserRemoteConfig" tag
-                raise NotImplementedError("%s not supported with %i "
-                                          "children" % (child.tag,
-                                                        len(list(child))))
+            elif child.tag == 'userRemoteConfigs':
+                if len(list(child)) != 1:
+                    # expected "hudson.plugins.git.UserRemoteConfig" tag
+                    raise NotImplementedError("%s not supported with %i "
+                                              "children" % (child.tag,
+                                                            len(list(child))))
 
-            for setting in child[0]:
-                if setting.tag in ['url', 'name', 'refspec']:
-                    git[setting.tag] = setting.text
-                elif setting.tag == 'credentialsId':
-                    git['credentials-id'] = setting.text
+                for setting in child[0]:
+                    if setting.tag in ['url', 'name', 'refspec']:
+                        git[setting.tag] = setting.text
+                    elif setting.tag == 'credentialsId':
+                        git['credentials-id'] = setting.text
+                    else:
+                        raise NotImplementedError("cannot handle UserRemoteConfig setting %s" % setting.tag)
+
+            elif child.tag == 'gitTool':
+                git['git-tool'] = child.text
+
+            elif child.tag == 'excludedUsers':
+                if child.text:
+                    users = child.text.split()
+                    git['excluded-users'] = users
+
+            elif child.tag == 'buildChooser':
+                if child.attrib['class'] == \
+                        'hudson.plugins.git.util.DefaultBuildChooser':
+                    continue
                 else:
-                    raise NotImplementedError("cannot handle UserRemoteConfig setting %s" % setting.tag)
+                    # see JJB's jenkins_jobs/modules/scm.py
+                    # for other build choosers
+                    raise NotImplementedError("%s build "
+                                              "chooser" % child.attrib['class'])
 
-        elif child.tag == 'gitTool':
-            git['git-tool'] = child.text
+            elif child.tag == 'disableSubmodules':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    raise NotImplementedError("TODO: %s" % child.tag)
 
-        elif child.tag == 'excludedUsers':
-            if child.text:
-                users = child.text.split()
-                git['excluded-users'] = users
+            elif child.tag == 'recursiveSubmodules':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    raise NotImplementedError("TODO: %s" % child.tag)
 
-        elif child.tag == 'buildChooser':
-            if child.attrib['class'] == \
-                    'hudson.plugins.git.util.DefaultBuildChooser':
+            elif child.tag == 'authorOrCommitter':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['use-author'] = True
+
+            elif child.tag == 'useShallowClone':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['shallow-clone'] = True
+
+            elif child.tag == 'ignoreNotifyCommit':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['ignore-notify'] = True
+
+            elif child.tag == 'wipeOutWorkspace':
+                git['wipe-workspace'] = (child.text == 'true')
+
+            elif child.tag == 'skipTag':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['skip-tag'] = True
+
+            elif child.tag == 'pruneBranches':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['prune'] = True
+
+            elif child.tag == 'remotePoll':
+                # 'false' is the default and needs no explict YAML.
+                if child.text == 'true':
+                    git['fastpoll'] = True
+
+            elif child.tag == 'relativeTargetDir':
+                # If it's empty, no explicit 'basedir' YAML needed.
+                if child.text:
+                    git['basedir'] = child.text
+
+            elif child.tag == 'reference':
+                # If it's empty, we're good
+                if child.text or len(list(child)) > 0:
+                    raise NotImplementedError(child.tag)
+
+            elif child.tag == 'gitConfigName':
+                # If it's empty, we're good
+                if child.text or len(list(child)) > 0:
+                    raise NotImplementedError(child.tag)
+
+            elif child.tag == 'gitConfigEmail':
+                # If it's empty, we're good
+                if child.text or len(list(child)) > 0:
+                    raise NotImplementedError(child.tag)
+
+            elif child.tag == 'scmName':
+                # If it's empty, we're good
+                if child.text or len(list(child)) > 0:
+                    raise NotImplementedError(child.tag)
+
+            elif child.tag == 'branches':
+                if child[0][0].tag != 'name':
+                    raise NotImplementedError("%s XML not supported"
+                                              % child[0][0].tag)
+                branches = []
+                for item in child:
+                    for branch in item:
+                        branches.append(branch.text)
+                git['branches'] = branches
+
+            elif child.tag == 'doGenerateSubmoduleConfigurations':
+                if len(list(child)) != 0:
+                    raise NotImplementedError("%s not supported with %i children"
+                                              % (child.tag, len(list(child))))
+                # JJB doesn't handle this element anyway. Just continue on.
                 continue
+
+            elif child.tag == 'submoduleCfg':
+                if len(list(child)) > 0:
+                    raise NotImplementedError("%s not supported with %i children"
+                                              % (child.tag, len(list(child))))
+
+            elif child.tag == 'browser':
+                if child.text or len(list(child)) > 0:
+                    raise NotImplementedError(child.tag)
+
+            elif child.tag == 'extensions':
+                if len(list(child)) == 0 or not list(child[0]):
+                    # This is just an empty <extensions/>. We can skip it.
+                    continue
+                if len(list(child)) != 1:
+                    # hudson.plugins.git.extensions.impl.RelativeTargetDirectory
+                    raise NotImplementedError("%s not supported with %i children"
+                                              % (child.tag, len(list(child))))
+                if len(list(child[0])) != 1:
+                    print list(child[0])
+                    # expected relativeTargetDir
+                    raise NotImplementedError("%s not supported with %i children"
+                                              % (child[0].tag, len(list(child[0]))))
+                if child[0][0].tag != 'relativeTargetDir':
+                    raise NotImplementedError("%s XML not supported"
+                                              % child[0][0].tag)
+                git['basedir'] = child[0][0].text
+
             else:
-                # see JJB's jenkins_jobs/modules/scm.py
-                # for other build choosers
-                raise NotImplementedError("%s build "
-                                          "chooser" % child.attrib['class'])
-
-        elif child.tag == 'disableSubmodules':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                raise NotImplementedError("TODO: %s" % child.tag)
-
-        elif child.tag == 'recursiveSubmodules':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                raise NotImplementedError("TODO: %s" % child.tag)
-
-        elif child.tag == 'authorOrCommitter':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['use-author'] = True
-
-        elif child.tag == 'useShallowClone':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['shallow-clone'] = True
-
-        elif child.tag == 'ignoreNotifyCommit':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['ignore-notify'] = True
-
-        elif child.tag == 'wipeOutWorkspace':
-            git['wipe-workspace'] = (child.text == 'true')
-
-        elif child.tag == 'skipTag':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['skip-tag'] = True
-
-        elif child.tag == 'pruneBranches':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['prune'] = True
-
-        elif child.tag == 'remotePoll':
-            # 'false' is the default and needs no explict YAML.
-            if child.text == 'true':
-                git['fastpoll'] = True
-
-        elif child.tag == 'relativeTargetDir':
-            # If it's empty, no explicit 'basedir' YAML needed.
-            if child.text:
-                git['basedir'] = child.text
-
-        elif child.tag == 'reference':
-            # If it's empty, we're good
-            if child.text or len(list(child)) > 0:
-                raise NotImplementedError(child.tag)
-
-        elif child.tag == 'gitConfigName':
-            # If it's empty, we're good
-            if child.text or len(list(child)) > 0:
-                raise NotImplementedError(child.tag)
-
-        elif child.tag == 'gitConfigEmail':
-            # If it's empty, we're good
-            if child.text or len(list(child)) > 0:
-                raise NotImplementedError(child.tag)
-
-        elif child.tag == 'scmName':
-            # If it's empty, we're good
-            if child.text or len(list(child)) > 0:
-                raise NotImplementedError(child.tag)
-
-        elif child.tag == 'branches':
-            if child[0][0].tag != 'name':
-                raise NotImplementedError("%s XML not supported"
-                                          % child[0][0].tag)
-            branches = []
-            for item in child:
-                for branch in item:
-                    branches.append(branch.text)
-            git['branches'] = branches
-
-        elif child.tag == 'doGenerateSubmoduleConfigurations':
-            if len(list(child)) != 0:
-                raise NotImplementedError("%s not supported with %i children"
-                                          % (child.tag, len(list(child))))
-            # JJB doesn't handle this element anyway. Just continue on.
-            continue
-
-        elif child.tag == 'submoduleCfg':
-            if len(list(child)) > 0:
-                raise NotImplementedError("%s not supported with %i children"
-                                          % (child.tag, len(list(child))))
-
-        elif child.tag == 'browser':
-            if child.text or len(list(child)) > 0:
-                raise NotImplementedError(child.tag)
-
-        elif child.tag == 'extensions':
-            if len(list(child)) == 0 or not list(child[0]):
-                # This is just an empty <extensions/>. We can skip it.
-                continue
-            if len(list(child)) != 1:
-                # hudson.plugins.git.extensions.impl.RelativeTargetDirectory
-                raise NotImplementedError("%s not supported with %i children"
-                                          % (child.tag, len(list(child))))
-            if len(list(child[0])) != 1:
-                print list(child[0])
-                # expected relativeTargetDir
-                raise NotImplementedError("%s not supported with %i children"
-                                          % (child[0].tag, len(list(child[0]))))
-            if child[0][0].tag != 'relativeTargetDir':
-                raise NotImplementedError("%s XML not supported"
-                                          % child[0][0].tag)
-            git['basedir'] = child[0][0].text
-
-        else:
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
-    return [['scm', [{'git': git}]]]
+                raise NotImplementedError("cannot handle Git option %s" % child.tag)
+        scm.append({'git': git})
+    except NotImplementedError, e:
+        print "going raw because: %s" % e
+        insert_rawxml(top, scm)
+    return [['scm', scm]]
 
 
 # Handle "<canRoam>true</canRoam>"
