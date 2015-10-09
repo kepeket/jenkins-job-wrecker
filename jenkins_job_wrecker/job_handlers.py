@@ -106,8 +106,8 @@ def handle_scm(top):
         if top.attrib['class'] == 'org.jenkinsci.plugins.multiplescms.MultiSCM':
             scms = []
             for scm in top[0]:
-                scms.append(handle_scm(scm)[0])
-            return scms
+                scms.append(handle_scm(scm)[0][1][0])
+            return [['scm', scms]]
 
     scm = []
 
