@@ -402,7 +402,10 @@ def handle_builders(top):
                 elif copy_element.tag == 'selector':
                     select = copy_element.attrib['class']
                     select = select.replace('hudson.plugins.copyartifact.', '')
-                    copyartifact['which-build'] = selectdict[select]
+                    which_build = selectdict[select]
+                    copyartifact['which-build'] = which_build
+                    if which_build == 'build-param':
+                        copyartifact['param'] = copy_element.findtext('parameterName')
                 elif copy_element.tag == 'flatten':
                     copyartifact[copy_element.tag] = \
                         (copy_element.text == 'true')
