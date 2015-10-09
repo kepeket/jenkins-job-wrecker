@@ -182,7 +182,7 @@ def main():
             job_names = []
             for job in server.get_jobs():
 
-                if job['name'] in args.ignore:
+                if args.ignore and (job['name'] in args.ignore):
                     log.info('Ignoring [%s] as requested...' % job)
                     continue
 
