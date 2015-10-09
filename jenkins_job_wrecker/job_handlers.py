@@ -642,8 +642,7 @@ def handle_buildwrappers(top):
         elif child.tag == 'org.jenkinsci.plugins.buildnamesetter.BuildNameSetter':  # NOQA
             wrappers.append({'build-name': {'name': child[0].text}})
         else:
-            print child
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
+            insert_rawxml(child, wrappers)
     return [['wrappers', wrappers]]
 
 
