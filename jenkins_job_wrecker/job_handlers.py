@@ -315,11 +315,9 @@ def handle_triggers(top):
                 else:
                     raise NotImplementedError("cannot handle scm trigger "
                                               "setting %s" % setting.tag)
-            triggers.append(pollscm)
+            triggers.append({'pollscm': pollscm})
         elif child.tag == 'hudson.triggers.TimerTrigger':
-            timed_trigger = {}
-            timed_trigger['timed'] = child[0].text
-            triggers.append(timed_trigger)
+            triggers.append({'timed': child.findtext('spec')})
         elif child.tag == 'jenkins.triggers.ReverseBuildTrigger':
             reverse = {}
             for setting in child:
@@ -332,12 +330,9 @@ def handle_triggers(top):
                 else:
                     raise NotImplementedError("cannot handle reverse trigger "
                                               "setting %s" % setting.tag)
-            triggers.append(reverse)
-        elif child.tag == 'com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritTrigger':     # NOQA
-            # Skip for now
-            pass
+            triggers.append({'reverse': reverse})
         else:
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
+            insert_rawxml(child, triggers)
     return [['triggers', triggers]]
 
 
