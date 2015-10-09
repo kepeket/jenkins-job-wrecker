@@ -68,11 +68,9 @@ def handle_parameters_property(top):
                 parameter_type = 'string'
             elif parameterdef.tag == 'hudson.model.BooleanParameterDefinition':
                 parameter_type = 'bool'
-            elif parameterdef.tag == 'hudson.model.ChoiceParameterDefinition':
-                parameter_type = 'choice'
-                raise NotImplementedError(parameterdef.tag)
             else:
-                raise NotImplementedError(parameterdef.tag)
+                insert_rawxml(parameterdef, parameters)
+                continue
 
             parameter_settings = {}
             for defsetting in parameterdef:
