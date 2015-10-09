@@ -451,6 +451,8 @@ def handle_publishers(top):
                     archive['artifacts'] = element.text
                 elif element.tag == 'allowEmptyArchive':
                     archive['allow-empty'] = (element.text == 'true')
+                elif element.tag == 'excludes':
+                    archive['excludes'] = element.text
                 elif element.tag == 'fingerprint':
                     archive['fingerprint'] = (element.text == 'true')
                 elif element.tag == 'onlyIfSuccessful':
