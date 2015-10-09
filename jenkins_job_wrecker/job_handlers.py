@@ -443,168 +443,162 @@ def handle_builders(top):
 def handle_publishers(top):
     publishers = []
     for child in top:
+        try:
 
-        if child.tag == 'hudson.tasks.ArtifactArchiver':
-            archive = {}
-            for element in child:
-                if element.tag == 'artifacts':
-                    archive['artifacts'] = element.text
-                elif element.tag == 'allowEmptyArchive':
-                    archive['allow-empty'] = (element.text == 'true')
-                elif element.tag == 'excludes':
-                    archive['excludes'] = element.text
-                elif element.tag == 'fingerprint':
-                    archive['fingerprint'] = (element.text == 'true')
-                elif element.tag == 'onlyIfSuccessful':
-                    # only-if-success first available in JJB 1.3.0
-                    archive['only-if-success'] = (element.text == 'true')
-                elif element.tag == 'defaultExcludes':
-                    # default-excludes is not yet available in JJB master
-                    archive['default-excludes'] = (element.text == 'true')
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % element.tag)
+            if child.tag == 'hudson.tasks.ArtifactArchiver':
+                archive = {}
+                for element in child:
+                    if element.tag == 'artifacts':
+                        archive['artifacts'] = element.text
+                    elif element.tag == 'allowEmptyArchive':
+                        archive['allow-empty'] = (element.text == 'true')
+                    elif element.tag == 'excludes':
+                        archive['excludes'] = element.text
+                    elif element.tag == 'fingerprint':
+                        archive['fingerprint'] = (element.text == 'true')
+                    elif element.tag == 'onlyIfSuccessful':
+                        # only-if-success first available in JJB 1.3.0
+                        archive['only-if-success'] = (element.text == 'true')
+                    elif element.tag == 'defaultExcludes':
+                        # default-excludes is not yet available in JJB master
+                        archive['default-excludes'] = (element.text == 'true')
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % element.tag)
 
-            publishers.append({'archive': archive})
+                publishers.append({'archive': archive})
 
-        elif child.tag == 'hudson.plugins.descriptionsetter.DescriptionSetterPublisher':  # NOQA
-            setter = {}
-            for element in child:
-                if element.tag == 'regexp':
-                    setter['regexp'] = element.text
-                elif element.tag == 'regexpForFailed':
-                    setter['regexp-for-failed'] = element.text
-                elif element.tag == 'setForMatrix':
-                    setter['set-for-matrix'] = (element.text == 'true')
-                elif element.tag == 'description':
-                    setter['description'] = element.text
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % element.tag)
+            elif child.tag == 'hudson.plugins.descriptionsetter.DescriptionSetterPublisher':  # NOQA
+                setter = {}
+                for element in child:
+                    if element.tag == 'regexp':
+                        setter['regexp'] = element.text
+                    elif element.tag == 'regexpForFailed':
+                        setter['regexp-for-failed'] = element.text
+                    elif element.tag == 'setForMatrix':
+                        setter['set-for-matrix'] = (element.text == 'true')
+                    elif element.tag == 'description':
+                        setter['description'] = element.text
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % element.tag)
 
-            publishers.append({'description-setter': setter})
+                publishers.append({'description-setter': setter})
 
-        elif child.tag == 'hudson.tasks.Fingerprinter':
-            fingerprint = {}
-            for element in child:
-                if element.tag == 'targets':
-                    fingerprint['files'] = element.text
-                elif element.tag == 'recordBuildArtifacts':
-                    fingerprint['record-artifacts'] = (element.text == 'true')
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % element.tag)
-            publishers.append({'fingerprint': fingerprint})
+            elif child.tag == 'hudson.tasks.Fingerprinter':
+                fingerprint = {}
+                for element in child:
+                    if element.tag == 'targets':
+                        fingerprint['files'] = element.text
+                    elif element.tag == 'recordBuildArtifacts':
+                        fingerprint['record-artifacts'] = (element.text == 'true')
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % element.tag)
+                publishers.append({'fingerprint': fingerprint})
 
-        elif child.tag == 'hudson.plugins.emailext.ExtendedEmailPublisher':
-            ext_email = {}
-            for element in child:
-                if element.tag == 'recipientList':
-                    ext_email['recipients'] = element.text
+            elif child.tag == 'hudson.plugins.emailext.ExtendedEmailPublisher':
+                ext_email = {}
+                for element in child:
+                    if element.tag == 'recipientList':
+                        ext_email['recipients'] = element.text
 
-                elif element.tag == 'replyTo':
-                    ext_email['reply-to'] = element.text
+                    elif element.tag == 'replyTo':
+                        ext_email['reply-to'] = element.text
 
-                elif element.tag == 'contentType':
-                    ext_email['content-type'] = element.text
+                    elif element.tag == 'contentType':
+                        ext_email['content-type'] = element.text
 
-                elif element.tag == 'defaultSubject':
-                    ext_email['subject'] = element.text
+                    elif element.tag == 'defaultSubject':
+                        ext_email['subject'] = element.text
 
-                elif element.tag == 'defaultContent':
-                    ext_email['body'] = element.text
+                    elif element.tag == 'defaultContent':
+                        ext_email['body'] = element.text
 
-                elif element.tag in ['attachBuildLog', 'compressBuildLog']:
-                    ext_email['attach-build-log'] = (element.text == 'true')
+                    elif element.tag in ['attachBuildLog', 'compressBuildLog']:
+                        ext_email['attach-build-log'] = (element.text == 'true')
 
-                elif element.tag == 'attachmentsPattern':
-                    ext_email['attachment'] = element.text
+                    elif element.tag == 'attachmentsPattern':
+                        ext_email['attachment'] = element.text
 
-                elif element.tag in ['saveOutput', 'disabled']:
-                    pass
+                    elif element.tag in ['saveOutput', 'disabled']:
+                        pass
 
-                elif element.tag == 'preBuild':
-                    ext_email['pre-build'] = (element.text == 'true')
+                    elif element.tag == 'preBuild':
+                        ext_email['pre-build'] = (element.text == 'true')
 
-                elif element.tag == 'presendScript':
-                    ext_email['presend-script'] = element.text
+                    elif element.tag == 'presendScript':
+                        ext_email['presend-script'] = element.text
 
-                elif element.tag == 'sendTo':
-                    ext_email['send-to'] = element.text
+                    elif element.tag == 'sendTo':
+                        ext_email['send-to'] = element.text
 
-                elif element.tag == 'configuredTriggers':
-                    print "IGNORED configuredTriggers in email-ext"
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % element.tag)
 
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % element.tag)
+                publishers.append({'email-ext': ext_email})
 
-            publishers.append({'email-ext': ext_email})
+            elif child.tag == 'hudson.tasks.junit.JUnitResultArchiver':
+                junit_publisher = {}
+                for element in child:
+                    if element.tag == 'testResults':
+                        junit_publisher['results'] = element.text
+                    elif element.tag == 'keepLongStdio':
+                        junit_publisher['keep-long-stdio'] = \
+                            (element.text == 'true')
+                    elif element.tag == 'healthScaleFactor':
+                        junit_publisher['health-scale-factor'] = element.text
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "XML %s" % element.tag)
+                publishers.append({'junit': junit_publisher})
 
-        elif child.tag == 'hudson.tasks.junit.JUnitResultArchiver':
-            junit_publisher = {}
-            for element in child:
-                if element.tag == 'testResults':
-                    junit_publisher['results'] = element.text
-                elif element.tag == 'keepLongStdio':
-                    junit_publisher['keep-long-stdio'] = \
-                        (element.text == 'true')
-                elif element.tag == 'healthScaleFactor':
-                    junit_publisher['health-scale-factor'] = element.text
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "XML %s" % element.tag)
-            publishers.append({'junit': junit_publisher})
+            elif child.tag == 'hudson.plugins.parameterizedtrigger.BuildTrigger':
+                build_trigger = {}
 
-        elif child.tag == 'hudson.plugins.parameterizedtrigger.BuildTrigger':
-            build_trigger = {}
+                for element in child:
+                    for sub in element:
+                        if sub.tag == 'hudson.plugins.parameterizedtrigger.BuildTriggerConfig':     # NOQA
+                            for config in sub:
+                                if config.tag == 'projects':
+                                    build_trigger['project'] = config.text
+                                elif config.tag == 'condition':
+                                    build_trigger['condition'] = config.text
+                                elif config.tag == 'triggerWithNoParameters':
+                                    build_trigger['trigger-with-no-params'] = \
+                                        (config.text == 'true')
+                                elif config.tag == 'configs':
+                                    pass
+                                else:
+                                    raise NotImplementedError("cannot handle "
+                                                              "XML %s" % config.tag)
 
-            for element in child:
-                for sub in element:
-                    if sub.tag == 'hudson.plugins.parameterizedtrigger.BuildTriggerConfig':     # NOQA
-                        for config in sub:
-                            if config.tag == 'projects':
-                                build_trigger['project'] = config.text
-                            elif config.tag == 'condition':
-                                build_trigger['condition'] = config.text
-                            elif config.tag == 'triggerWithNoParameters':
-                                build_trigger['trigger-with-no-params'] = \
-                                    (config.text == 'true')
-                            elif config.tag == 'configs':
-                                pass
-                            else:
-                                raise NotImplementedError("cannot handle "
-                                                          "XML %s" % config.tag)
+                publishers.append({'trigger-parameterized-builds': build_trigger})
 
-            publishers.append({'trigger-parameterized-builds': build_trigger})
+            elif child.tag == 'hudson.tasks.Mailer':
+                email_settings = {}
+                for element in child:
 
-        elif child.tag == 'hudson.tasks.Mailer':
-            email_settings = {}
-            for element in child:
+                    if element.tag == 'recipients':
+                        email_settings['recipients'] = element.text
+                    elif element.tag == 'dontNotifyEveryUnstableBuild':
+                        email_settings['notify-every-unstable-build'] = \
+                            (element.text == 'true')
+                    elif element.tag == 'sendToIndividuals':
+                        email_settings['send-to-individuals'] = \
+                            (element.text == 'true')
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "email %s" % element.tag)
+                publishers.append({'email': email_settings})
 
-                if element.tag == 'recipients':
-                    email_settings['recipients'] = element.text
-                elif element.tag == 'dontNotifyEveryUnstableBuild':
-                    email_settings['notify-every-unstable-build'] = \
-                        (element.text == 'true')
-                elif element.tag == 'sendToIndividuals':
-                    email_settings['send-to-individuals'] = \
-                        (element.text == 'true')
-                else:
-                    raise NotImplementedError("cannot handle "
-                                              "email %s" % element.tag)
-            publishers.append({'email': email_settings})
+            else:
+                raise NotImplementedError("cannot handle XML %s" % child.tag)
 
-        elif child.tag == 'org.jenkins__ci.plugins.flexible__publish.FlexiblePublisher':    # NOQA
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
-
-        elif child.tag == 'hudson.plugins.s3.S3BucketPublisher':
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
-        elif child.tag == 'hudson.plugins.robot.RobotPublisher':
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
-
-        else:
-            raise NotImplementedError("cannot handle XML %s" % child.tag)
+        except NotImplementedError, e:
+            print "going raw because: %s" % e
+            insert_rawxml(child, publishers)
 
     return [['publishers', publishers]]
 
