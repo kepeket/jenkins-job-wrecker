@@ -39,13 +39,9 @@ def handle_properties(top):
             parametersdefs = handle_parameters_property(child)
             for pd in parametersdefs:
                 parameters.append(pd)
-        # Parameters
-        elif child.tag == 'com.sonyericsson.rebuild.RebuildSettings':
-            # latest version of JJB (1.3.0 at the moment) doesn't support this.
-            continue
         # A property we don't know about
         else:
-            print "cannot handle XML %s" % child.tag
+            insert_rawxml(child, properties)
     return [['properties', properties], ['parameters', parameters]]
 
 
@@ -708,3 +704,9 @@ def handle_scmcheckoutretrycount(top):
 
 def handle_customworkspace(top):
     return [['workspace', top.text]]
+
+
+def insert_rawxml(node, output):
+    import xml.etree.ElementTree as ET
+    xml = ET.tostring(node).strip() + '\n'
+    output.append({'raw': {'xml': xml}})
