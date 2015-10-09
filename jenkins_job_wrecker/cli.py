@@ -114,6 +114,9 @@ def parse_args(args):
 
 
 def main():
+    import jenkins_job_wrecker.literal_yaml as literal_yaml
+    literal_yaml.install_representer()
+
     args = parse_args(sys.argv[1:])
 
     if args.verbose:
