@@ -1,5 +1,6 @@
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter
+from collections import OrderedDict
 import errno
 import logging
 import jenkins
@@ -36,7 +37,7 @@ def get_xml_root(filename=False, string=False):
 # Walk an XML ElementTree ("root"), and return a YAML string
 def root_to_yaml(root, name):
     # Top-level "job" data
-    job = {}
+    job = OrderedDict()
     build = [{'job': job}]
 
     job['name'] = name
