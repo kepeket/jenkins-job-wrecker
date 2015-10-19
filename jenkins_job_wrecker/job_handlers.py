@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import OrderedDict
 
 logging.basicConfig(level=logging.INFO)
@@ -521,41 +522,98 @@ def handle_publishers(top):
                 publishers.append({'fingerprint': fingerprint})
 
             elif child.tag == 'hudson.plugins.emailext.ExtendedEmailPublisher':
-                ext_email = {}
+                ext_email = OrderedDict()
                 for element in child:
                     if element.tag == 'recipientList':
-                        ext_email['recipients'] = element.text
+                        if element.text != '$DEFAULT_RECIPIENTS':
+                            ext_email['recipients'] = element.text
 
                     elif element.tag == 'replyTo':
-                        ext_email['reply-to'] = element.text
+                        if element.text != '$DEFAULT_REPLYTO':
+                            ext_email['reply-to'] = element.text
 
                     elif element.tag == 'contentType':
-                        ext_email['content-type'] = element.text
+                        if element.text != 'default':
+                            mime_content_type = {
+                                'text/plain': 'text',
+                                'text/html': 'html',
+                                'both': 'both-html-text',
+                            }
+                            ctype = element.text
+                            if ctype not in mime_content_type:
+                                raise NotImplementedError('cannot handle email-ext contentType "%s"' % ctype)
+                            ext_email['content-type'] = mime_content_type[ctype]
 
                     elif element.tag == 'defaultSubject':
-                        ext_email['subject'] = element.text
+                        if element.text != '$DEFAULT_SUBJECT':
+                            ext_email['subject'] = element.text
 
                     elif element.tag == 'defaultContent':
-                        ext_email['body'] = element.text
+                        if element.text != '$DEFAULT_CONTENT':
+                            ext_email['body'] = element.text
 
-                    elif element.tag in ['attachBuildLog', 'compressBuildLog']:
-                        ext_email['attach-build-log'] = (element.text == 'true')
+                    elif element.tag == 'attachBuildLog':
+                        if element.text == 'true':
+                            ext_email['attach-build-log'] = True
+
+                    # TODO not actually supported in JJB yet
+                    elif element.tag == 'compressBuildLog':
+                        if element.text == 'true':
+                            ext_email['compress-build-log'] = True
 
                     elif element.tag == 'attachmentsPattern':
-                        ext_email['attachment'] = element.text
+                        if element.text:
+                            ext_email['attachments'] = element.text
 
-                    elif element.tag in ['saveOutput', 'disabled']:
-                        pass
+                    elif element.tag == 'saveOutput':
+                        if element.text == 'true':
+                            ext_email['save-output'] = True
 
-                    elif element.tag == 'preBuild':
-                        ext_email['pre-build'] = (element.text == 'true')
+                    elif element.tag == 'disabled':
+                        if element.text == 'true':
+                            ext_email['disable-publisher'] = True
 
                     elif element.tag == 'presendScript':
-                        ext_email['presend-script'] = element.text
+                        if element.text != '$DEFAULT_PRESEND_SCRIPT':
+                            ext_email['presend-script'] = element.text
 
-                    elif element.tag == 'sendTo':
-                        ext_email['send-to'] = element.text
-
+                    elif element.tag == 'configuredTriggers':
+                        # JJB defaults "failure" to true
+                        ext_email['failure'] = False
+                        for trigger in element:
+                            # TODO check that triggers have their default
+                            # config, as JJB does not handle anything else.
+                            triggerClass = re.sub(r'^hudson\.plugins\.emailext\.plugins\.trigger\.', '', trigger.tag)
+                            if triggerClass == 'AlwaysTrigger':
+                                ext_email['always'] = True
+                            elif triggerClass == 'UnstableTrigger':
+                                ext_email['unstable'] = True
+                            elif triggerClass == 'FirstFailureTrigger':
+                                ext_email['first-failure'] = True
+                            elif triggerClass == 'NotBuiltTrigger':
+                                ext_email['not-built'] = True
+                            elif triggerClass == 'AbortedTrigger':
+                                ext_email['aborted'] = True
+                            elif triggerClass == 'RegressionTrigger':
+                                ext_email['regression'] = True
+                            elif triggerClass == 'FailureTrigger':
+                                ext_email['failure'] = True
+                            elif triggerClass == 'SecondFailureTrigger':
+                                ext_email['second-failure'] = True
+                            elif triggerClass == 'ImprovementTrigger':
+                                ext_email['improvement'] = True
+                            elif triggerClass == 'StillFailingTrigger':
+                                ext_email['still-failing'] = True
+                            elif triggerClass == 'SuccessTrigger':
+                                ext_email['success'] = True
+                            elif triggerClass == 'FixedTrigger':
+                                ext_email['fixed'] = True
+                            elif triggerClass == 'StillUnstableTrigger':
+                                ext_email['still-unstable'] = True
+                            elif triggerClass == 'PreBuildTrigger':
+                                ext_email['pre-build'] = True
+                            else:
+                                raise NotImplementedError("cannot handle email-ext trigger %s" % trigger.tag)
                     else:
                         raise NotImplementedError("cannot handle "
                                                   "XML %s" % element.tag)

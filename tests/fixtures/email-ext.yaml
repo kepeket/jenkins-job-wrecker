@@ -1,0 +1,6 @@
+- job:
+    name: email-ext
+    project-type: freestyle
+    publishers:
+    - email-ext:
+        failure: true
