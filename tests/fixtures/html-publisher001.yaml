@@ -1,0 +1,11 @@
+- job:
+    name: html-publisher001
+    project-type: freestyle
+    publishers:
+    - html-publisher:
+        name: some name
+        dir: path/
+        files: index.html
+        link-to-last-build: true
+        keep-all: true
+        allow-missing: true

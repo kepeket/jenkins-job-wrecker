@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -595,6 +596,36 @@ def handle_publishers(top):
                         raise NotImplementedError("cannot handle "
                                                   "email %s" % element.tag)
                 publishers.append({'email': email_settings})
+
+            elif child.tag == 'htmlpublisher.HtmlPublisher':
+                if len(child) != 1 or len(child[0]) != 1 \
+                        or child[0].tag != 'reportTargets' \
+                        or child[0][0].tag != 'htmlpublisher.HtmlPublisherTarget':
+                    raise NotImplementedError("can only handle a single HtmlPublisherTarget")
+
+                html_settings = OrderedDict()
+
+                for element in child[0][0]:
+
+                    if element.tag == 'reportName':
+                        html_settings['name'] = element.text
+                    elif element.tag == 'reportDir':
+                        html_settings['dir'] = element.text
+                    elif element.tag == 'reportFiles':
+                        html_settings['files'] = element.text
+                    elif element.tag == 'alwaysLinkToLastBuild':
+                        html_settings['link-to-last-build'] = element.text == 'true'
+                    elif element.tag == 'keepAll':
+                        html_settings['keep-all'] = element.text == 'true'
+                    elif element.tag == 'allowMissing':
+                        html_settings['allow-missing'] = element.text == 'true'
+                    elif element.tag == 'wrapperName' and \
+                            element.text == 'htmlpublisher-wrapper.html':
+                        pass
+                    else:
+                        raise NotImplementedError("cannot handle "
+                                                  "html setting %s" % element.tag)
+                publishers.append({'html-publisher': html_settings})
 
             else:
                 raise NotImplementedError("cannot handle XML %s" % child.tag)
