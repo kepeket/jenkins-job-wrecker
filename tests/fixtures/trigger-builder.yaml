@@ -1,0 +1,14 @@
+- job:
+    name: trigger-builder
+    builders:
+    - trigger-builds:
+      - project:
+        - foo
+        - bar
+      - project: foo
+        predefined-parameters: FOO=bar
+      - project: bar
+        parameter-factories:
+        - factory: filebuild
+          file-pattern: job_*.txt
+          no-files-found-action: FAIL

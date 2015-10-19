@@ -503,6 +503,62 @@ def handle_builder(builder):
 
             return {'conditional-step': conditional}
 
+        elif builderClass == 'hudson.plugins.parameterizedtrigger.TriggerBuilder':
+            triggerConfigs = []
+            for configNode in builder.find('configs'):
+                if configNode.tag != 'hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig':
+                    raise NotImplementedError("cannot handle trigger config %s" % item.tag)
+
+                triggerConfig = OrderedDict()
+                for propertyNode in configNode:
+                    if propertyNode.tag == 'projects':
+                        triggerConfig['project'] = \
+                            propertyNode.text.split(',') \
+                            if ',' in propertyNode.text \
+                            else propertyNode.text
+
+                    elif propertyNode.tag == 'configs':
+                        for confconf in propertyNode:
+                            if confconf.tag == 'hudson.plugins.parameterizedtrigger.PredefinedBuildParameters':
+                                triggerConfig['predefined-parameters'] = confconf.findtext('properties')
+                            else:
+                                raise NotImplementedError("cannot handle trigger config config %s" % confconf.tag)
+
+                    elif propertyNode.tag == 'configFactories':
+                        parameterFactories = []
+                        for factoryNode in propertyNode:
+                            factory = OrderedDict()
+                            if factoryNode.tag == 'hudson.plugins.parameterizedtrigger.FileBuildParameterFactory':
+                                factory['factory'] = 'filebuild'
+                                for factoryProperty in factoryNode:
+                                    if factoryProperty.tag == 'filePattern':
+                                        factory['file-pattern'] = factoryProperty.text
+
+                                    elif factoryProperty.tag == 'noFilesFoundAction':
+                                        factory['no-files-found-action'] = factoryProperty.text
+
+                                    else:
+                                        raise NotImplementedError("cannot handle trigger factory property %s" % factoryProperty.tag)
+
+                            else:
+                                raise NotImplementedError("cannot handle trigger factory %s" % factoryNode.tag)
+
+                            parameterFactories.append(factory)
+
+                        triggerConfig['parameter-factories'] = parameterFactories
+
+                    elif propertyNode.tag == 'condition' and propertyNode.text == 'ALWAYS' \
+                        or (propertyNode.tag in ['triggerWithNoParameters', 'buildAllNodesWithLabel']
+                            and propertyNode.text == 'false'):
+                        pass
+
+                    else:
+                        raise NotImplementedError("cannot handle trigger config property %s" % propertyNode.tag)
+
+                triggerConfigs.append(triggerConfig)
+
+            return {'trigger-builds': triggerConfigs}
+
         else:
             raise NotImplementedError("cannot handle builder %s" % builderClass)
 

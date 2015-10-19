@@ -35,3 +35,6 @@ class TestYAML(object):
 
     def test_single_conditional_builder(self):
         self.run_jjw('single-conditional-builder')
+
+    def test_trigger_builder(self):
+        self.run_jjw('trigger-builder')
