@@ -49,7 +49,7 @@ def handle_properties(top):
 
 # Handle "<com.coravy.hudson.plugins.github.GithubProjectProperty>..."
 def handle_github_project_property(top):
-    github = {}
+    github = OrderedDict()
     for child in top:
         if child.tag == 'projectUrl':
             github['url'] = child.text
@@ -74,7 +74,7 @@ def handle_parameters_property(top):
                 insert_rawxml(parameterdef, parameters)
                 continue
 
-            parameter_settings = {}
+            parameter_settings = OrderedDict()
             for defsetting in parameterdef:
                 key = {
                     'defaultValue': 'default',
@@ -326,7 +326,7 @@ def handle_triggers(top):
 
     for child in top:
         if child.tag == 'hudson.triggers.SCMTrigger':
-            pollscm = {}
+            pollscm = OrderedDict()
             for setting in child:
                 if setting.tag == 'spec':
                     pollscm['cron'] = setting.text
@@ -340,7 +340,7 @@ def handle_triggers(top):
         elif child.tag == 'hudson.triggers.TimerTrigger':
             triggers.append({'timed': child.findtext('spec')})
         elif child.tag == 'jenkins.triggers.ReverseBuildTrigger':
-            reverse = {}
+            reverse = OrderedDict()
             for setting in child:
                 if setting.tag == 'upstreamProjects':
                     reverse['jobs'] = setting.text
@@ -410,7 +410,7 @@ def handle_builder(builder):
 
     try:
         if builderClass == 'hudson.plugins.copyartifact.CopyArtifact':
-            copyartifact = {}
+            copyartifact = OrderedDict()
             selectdict = {
                 'StatusBuildSelector': 'last-successful',
                 'LastCompletedBuildSelector': 'last-completed',
@@ -573,7 +573,7 @@ def handle_publishers(top):
         try:
 
             if child.tag == 'hudson.tasks.ArtifactArchiver':
-                archive = {}
+                archive = OrderedDict()
                 for element in child:
                     if element.tag == 'artifacts':
                         archive['artifacts'] = element.text
@@ -596,7 +596,7 @@ def handle_publishers(top):
                 publishers.append({'archive': archive})
 
             elif child.tag == 'hudson.plugins.descriptionsetter.DescriptionSetterPublisher':  # NOQA
-                setter = {}
+                setter = OrderedDict()
                 for element in child:
                     if element.tag == 'regexp':
                         setter['regexp'] = element.text
@@ -613,7 +613,7 @@ def handle_publishers(top):
                 publishers.append({'description-setter': setter})
 
             elif child.tag == 'hudson.tasks.Fingerprinter':
-                fingerprint = {}
+                fingerprint = OrderedDict()
                 for element in child:
                     if element.tag == 'targets':
                         fingerprint['files'] = element.text
@@ -724,7 +724,7 @@ def handle_publishers(top):
                 publishers.append({'email-ext': ext_email})
 
             elif child.tag == 'hudson.tasks.junit.JUnitResultArchiver':
-                junit_publisher = {}
+                junit_publisher = OrderedDict()
                 for element in child:
                     if element.tag == 'testResults':
                         junit_publisher['results'] = element.text
@@ -739,7 +739,7 @@ def handle_publishers(top):
                 publishers.append({'junit': junit_publisher})
 
             elif child.tag == 'hudson.plugins.parameterizedtrigger.BuildTrigger':
-                build_trigger = {}
+                build_trigger = OrderedDict()
 
                 for element in child:
                     for sub in element:
@@ -761,7 +761,7 @@ def handle_publishers(top):
                 publishers.append({'trigger-parameterized-builds': build_trigger})
 
             elif child.tag == 'hudson.tasks.Mailer':
-                email_settings = {}
+                email_settings = OrderedDict()
                 for element in child:
 
                     if element.tag == 'recipients':
@@ -822,7 +822,7 @@ def handle_buildwrappers(top):
     for child in top:
 
         if child.tag == 'EnvInjectPasswordWrapper':
-            inject = {}
+            inject = OrderedDict()
             for element in child:
                 if element.tag == 'injectGlobalPasswords':
                     inject['global'] = (element.text == 'true')
@@ -844,7 +844,7 @@ def handle_buildwrappers(top):
             wrappers.append({'ansicolor': {'colormap': 'xterm'}})
 
         elif child.tag == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper':    # NOQA
-            ssh_agents = {}
+            ssh_agents = OrderedDict()
             for element in child:
                 if element.tag == 'credentialIds':
                     keys = []
@@ -866,7 +866,7 @@ def handle_buildwrappers(top):
 
 
 def handle_executionstrategy(top):
-    strategy = {}
+    strategy = OrderedDict()
     for child in top:
 
         if child.tag == 'runSequentially':
@@ -879,7 +879,7 @@ def handle_executionstrategy(top):
 
 # Handle "<logrotator>...</logrotator>"'
 def handle_logrotator(top):
-    logrotate = {}
+    logrotate = OrderedDict()
     for child in top:
 
         if child.tag == 'daysToKeep':
