@@ -235,6 +235,9 @@ def handle_scm(top):
                         branches.append(branch.text)
                 git['branches'] = branches
 
+            elif child.tag == 'localBranch':
+                git['local-branch'] = child.text
+
             elif child.tag == 'doGenerateSubmoduleConfigurations':
                 if len(list(child)) != 0:
                     raise NotImplementedError("%s not supported with %i children"

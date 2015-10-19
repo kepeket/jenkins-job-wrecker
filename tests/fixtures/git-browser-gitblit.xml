@@ -15,6 +15,7 @@
         <name>$GERRIT_REFSPEC</name>
       </hudson.plugins.git.BranchSpec>
     </branches>
+    <localBranch>somebranch</localBranch>
     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
     <browser class="hudson.plugins.git.browser.GitBlitRepositoryBrowser">
       <url>https://gerrit/plugins/gitblit/</url>
