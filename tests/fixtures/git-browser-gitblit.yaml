@@ -7,7 +7,8 @@
         credentials-id: f44184bd-abcd-4926-b4ba-0cd7167359e1
         refspec: refs/changes/*:refs/changes/* +refs/heads/*:refs/remotes/origin/*
         name: origin
-        branches: [$GERRIT_REFSPEC]
+        branches:
+        - $GERRIT_REFSPEC
         local-branch: somebranch
         browser: gitblit
         browser-url: https://gerrit/plugins/gitblit/

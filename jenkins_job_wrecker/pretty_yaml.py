@@ -29,4 +29,4 @@ PrettyDumper.add_representer(collections.OrderedDict, PrettyDumper.represent_ord
 
 
 def dump(data):
-    return yaml.dump(data, Dumper=PrettyDumper)
+    return yaml.dump(data, Dumper=PrettyDumper, default_flow_style=False)
