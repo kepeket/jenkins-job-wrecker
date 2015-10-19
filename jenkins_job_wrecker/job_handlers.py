@@ -117,7 +117,7 @@ def handle_scm(top):
         raise NotImplementedError("%s scm not supported" % top.attrib['class'])
 
     try:
-        git = {}
+        git = OrderedDict()
 
         for child in top:
 
@@ -248,8 +248,24 @@ def handle_scm(top):
                                               % (child.tag, len(list(child))))
 
             elif child.tag == 'browser':
-                if child.text or len(list(child)) > 0:
-                    raise NotImplementedError(child.tag)
+                if child.attrib['class'] == 'hudson.plugins.git.browser.GitBlitRepositoryBrowser':
+                    git['browser'] = 'gitblit'
+                    for item in child:
+                        if item.tag == 'url':
+                            git['browser-url'] = item.text
+                        elif item.tag == 'projectName':
+                            git['project-name'] = item.text
+                        else:
+                            raise NotImplementedError("cannot handle browser config %s", item.tag)
+                elif child.attrib['class'] == 'hudson.plugins.git.browser.GithubWeb':
+                    git['browser'] = 'githubweb'
+                    for item in child:
+                        if item.tag == 'url':
+                            git['browser-url'] = item.text
+                        else:
+                            raise NotImplementedError("cannot handle browser config %s", item.tag)
+                elif child.text or len(list(child)) > 0:
+                    raise NotImplementedError("cannot handle browser %s" % child.attrib['class'])
 
             elif child.tag == 'extensions':
                 if len(list(child)) == 0 or not list(child[0]):

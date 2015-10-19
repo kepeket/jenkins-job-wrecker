@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.3.5">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>ssh://jenkins@gerrit:29418/some/project</url>
+        <credentialsId>f44184bd-abcd-4926-b4ba-0cd7167359e1</credentialsId>
+        <refspec>refs/changes/*:refs/changes/* +refs/heads/*:refs/remotes/origin/*</refspec>
+        <name>origin</name>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>$GERRIT_REFSPEC</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <browser class="hudson.plugins.git.browser.GitBlitRepositoryBrowser">
+      <url>https://gerrit/plugins/gitblit/</url>
+      <projectName>some/project</projectName>
+    </browser>
+    <submoduleCfg class="list"/>
+  </scm>
+</project>

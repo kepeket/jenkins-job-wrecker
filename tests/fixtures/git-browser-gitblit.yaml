@@ -1,0 +1,13 @@
+- job:
+    name: git-browser-gitblit
+    project-type: freestyle
+    scm:
+    - git:
+        url: ssh://jenkins@gerrit:29418/some/project
+        credentials-id: f44184bd-abcd-4926-b4ba-0cd7167359e1
+        refspec: refs/changes/*:refs/changes/* +refs/heads/*:refs/remotes/origin/*
+        name: origin
+        branches: [$GERRIT_REFSPEC]
+        browser: gitblit
+        browser-url: https://gerrit/plugins/gitblit/
+        project-name: some/project
