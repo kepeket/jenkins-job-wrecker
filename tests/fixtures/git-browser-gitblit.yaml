@@ -1,6 +1,5 @@
 - job:
     name: git-browser-gitblit
-    project-type: freestyle
     scm:
     - git:
         url: ssh://jenkins@gerrit:29418/some/project

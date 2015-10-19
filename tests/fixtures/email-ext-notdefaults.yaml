@@ -1,6 +1,5 @@
 - job:
     name: email-ext-notdefaults
-    project-type: freestyle
     publishers:
     - email-ext:
         recipients: a@example.org,b@example.org

@@ -1,6 +1,5 @@
 - job:
     name: git-browser-githubweb
-    project-type: freestyle
     scm:
     - git:
         browser: githubweb

@@ -1,6 +1,5 @@
 - job:
     name: html-publisher001
-    project-type: freestyle
     publishers:
     - html-publisher:
         name: some name
