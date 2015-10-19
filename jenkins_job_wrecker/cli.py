@@ -7,8 +7,8 @@ import os
 import sys
 import textwrap
 import jenkins_job_wrecker.job_handlers as job_handlers
+from jenkins_job_wrecker.pretty_yaml import dump
 import xml.etree.ElementTree as ET
-from yaml import dump
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('jjwrecker')
@@ -76,7 +76,7 @@ def root_to_yaml(root, name):
     if len(raw_xmls):
         job['raw'] = {'xml': "\n".join(raw_xmls) + "\n"}
 
-    return dump(build, default_flow_style=False)
+    return dump(build)
 
 
 # argparse foo
@@ -114,9 +114,6 @@ def parse_args(args):
 
 
 def main():
-    import jenkins_job_wrecker.literal_yaml as literal_yaml
-    literal_yaml.install_representer()
-
     args = parse_args(sys.argv[1:])
 
     if args.verbose:
