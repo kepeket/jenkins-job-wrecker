@@ -32,3 +32,6 @@ class TestYAML(object):
 
     def test_email_ext_notdefaults(self):
         self.run_jjw('email-ext-notdefaults')
+
+    def test_single_conditional_builder(self):
+        self.run_jjw('single-conditional-builder')

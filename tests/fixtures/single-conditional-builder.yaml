@@ -1,0 +1,23 @@
+- job:
+    name: single-conditional-builder
+    builders:
+    - conditional-step:
+        condition-kind: regex-match
+        regex: a*b
+        label: cadaaab
+        steps:
+        - shell: ls
+    - conditional-step:
+        condition-kind: always
+        steps:
+        - shell: ls
+    - conditional-step:
+        condition-kind: never
+        steps:
+        - shell: ls
+    - conditional-step:
+        condition-kind: current-status
+        condition-worst: FAILURE
+        condition-best: UNSTABLE
+        steps:
+        - shell: ls

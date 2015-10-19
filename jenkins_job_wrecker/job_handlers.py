@@ -398,70 +398,117 @@ def handle_axes(top):
 def handle_builders(top):
     builders = []
     for child in top:
-        try:
-            if child.tag == 'hudson.plugins.copyartifact.CopyArtifact':
-                copyartifact = {}
-                selectdict = {
-                    'StatusBuildSelector': 'last-successful',
-                    'LastCompletedBuildSelector': 'last-completed',
-                    'SpecificBuildSelector': 'specific-build',
-                    'SavedBuildSelector': 'last-saved',
-                    'TriggeredBuildSelector': 'upstream-build',
-                    'PermalinkBuildSelector': 'permalink',
-                    'WorkspaceSelector': 'workspace-latest',
-                    'ParameterizedBuildSelector': 'build-param',
-                    'DownstreamBuildSelector': 'downstream-build'}
-                for copy_element in child:
-                    if copy_element.tag == 'project':
-                        copyartifact[copy_element.tag] = copy_element.text
-                    elif copy_element.tag == 'filter':
-                        copyartifact[copy_element.tag] = copy_element.text
-                    elif copy_element.tag == 'target':
-                        copyartifact[copy_element.tag] = copy_element.text
-                    elif copy_element.tag == 'excludes':
-                        copyartifact['exclude-pattern'] = copy_element.text
-                    elif copy_element.tag == 'selector':
-                        select = copy_element.attrib['class']
-                        select = select.replace('hudson.plugins.copyartifact.', '')
-                        which_build = selectdict[select]
-                        copyartifact['which-build'] = which_build
-                        if which_build == 'build-param':
-                            copyartifact['param'] = copy_element.findtext('parameterName')
-                    elif copy_element.tag == 'flatten':
-                        copyartifact[copy_element.tag] = \
-                            (copy_element.text == 'true')
-                    elif copy_element.tag == 'doNotFingerprintArtifacts':
-                        # Not yet implemented in JJB
-                        if copy_element.text != "false":
-                            raise NotImplementedError("cannot handle doNotFingerprintArtifacts != false")
-                        continue
-                    elif copy_element.tag == 'optional':
-                        copyartifact[copy_element.tag] = \
-                            (copy_element.text == 'true')
-                    else:
-                        raise NotImplementedError("cannot handle "
-                                                  "XML %s" % copy_element.tag)
-                builders.append({'copyartifact': copyartifact})
-
-            elif child.tag == 'hudson.tasks.Shell':
-                for shell_element in child:
-                    # Assumption: there's only one <command> in this
-                    # <hudson.tasks.Shell>
-                    if shell_element.tag == 'command':
-                        shell = shell_element.text
-                    else:
-                        raise NotImplementedError("cannot handle "
-                                                  "XML %s" % shell_element.tag)
-                builders.append({'shell': shell})
-
-            else:
-                raise NotImplementedError("cannot handle XML %s" % child.tag)
-
-        except NotImplementedError, e:
-            print "going raw because: %s" % e
-            insert_rawxml(child, builders)
-
+        builders.append(handle_builder(child))
     return [['builders', builders]]
+
+
+def handle_builder(builder):
+    if 'class' in builder.attrib:
+        builderClass = builder.attrib['class']
+    else:
+        builderClass = builder.tag
+
+    try:
+        if builderClass == 'hudson.plugins.copyartifact.CopyArtifact':
+            copyartifact = {}
+            selectdict = {
+                'StatusBuildSelector': 'last-successful',
+                'LastCompletedBuildSelector': 'last-completed',
+                'SpecificBuildSelector': 'specific-build',
+                'SavedBuildSelector': 'last-saved',
+                'TriggeredBuildSelector': 'upstream-build',
+                'PermalinkBuildSelector': 'permalink',
+                'WorkspaceSelector': 'workspace-latest',
+                'ParameterizedBuildSelector': 'build-param',
+                'DownstreamBuildSelector': 'downstream-build'}
+            for copy_element in builder:
+                if copy_element.tag == 'project':
+                    copyartifact[copy_element.tag] = copy_element.text
+                elif copy_element.tag == 'filter':
+                    copyartifact[copy_element.tag] = copy_element.text
+                elif copy_element.tag == 'target':
+                    copyartifact[copy_element.tag] = copy_element.text
+                elif copy_element.tag == 'excludes':
+                    copyartifact['exclude-pattern'] = copy_element.text
+                elif copy_element.tag == 'selector':
+                    select = copy_element.attrib['class']
+                    select = select.replace('hudson.plugins.copyartifact.', '')
+                    which_build = selectdict[select]
+                    copyartifact['which-build'] = which_build
+                    if which_build == 'build-param':
+                        copyartifact['param'] = copy_element.findtext('parameterName')
+                elif copy_element.tag == 'flatten':
+                    copyartifact[copy_element.tag] = \
+                        (copy_element.text == 'true')
+                elif copy_element.tag == 'doNotFingerprintArtifacts':
+                    # Not yet implemented in JJB
+                    if copy_element.text != "false":
+                        raise NotImplementedError("cannot handle doNotFingerprintArtifacts != false")
+                    continue
+                elif copy_element.tag == 'optional':
+                    copyartifact[copy_element.tag] = \
+                        (copy_element.text == 'true')
+                else:
+                    raise NotImplementedError("cannot handle "
+                                              "XML %s" % copy_element.tag)
+            return {'copyartifact': copyartifact}
+
+        elif builderClass == 'hudson.tasks.Shell':
+            for shell_element in builder:
+                # Assumption: there's only one <command> in this
+                # <hudson.tasks.Shell>
+                if shell_element.tag == 'command':
+                    shell = shell_element.text
+                else:
+                    raise NotImplementedError("cannot handle "
+                                              "XML %s" % shell_element.tag)
+            return {'shell': shell}
+
+        elif builderClass == 'org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder':
+            conditional = OrderedDict()
+            for item in builder:
+                if item.tag == 'condition':
+                    conditionClass = item.attrib['class']
+                    if conditionClass == 'org.jenkins_ci.plugins.run_condition.core.ExpressionCondition':
+                        conditional['condition-kind'] = 'regex-match'
+                        conditional['regex'] = item.findtext('expression')
+                        conditional['label'] = item.findtext('label')
+
+                    elif conditionClass == 'org.jenkins_ci.plugins.run_condition.core.AlwaysRun':
+                        conditional['condition-kind'] = 'always'
+
+                    elif conditionClass == 'org.jenkins_ci.plugins.run_condition.core.NeverRun':
+                        conditional['condition-kind'] = 'never'
+
+                    elif conditionClass == 'org.jenkins_ci.plugins.run_condition.core.StatusCondition':
+                        conditional['condition-kind'] = 'current-status'
+                        conditional['condition-worst'] = item.findtext('worstResult/name')
+                        conditional['condition-best'] = item.findtext('bestResult/name')
+
+                    else:
+                        raise NotImplementedError("cannot handle condition %s" % conditionClass)
+
+                elif item.tag == 'runner':
+                    runnerClass = item.attrib['class']
+                    if runnerClass == 'org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail':
+                        pass
+                    else:
+                        raise NotImplementedError("cannot handle conditional runner %s" % runnerClass)
+
+                elif item.tag == 'buildStep':
+                    conditional['steps'] = [handle_builder(item)]
+
+                else:
+                    raise NotImplementedError("cannot handle conditional property %s" % item.tag)
+
+            return {'conditional-step': conditional}
+
+        else:
+            raise NotImplementedError("cannot handle builder %s" % builderClass)
+
+    except NotImplementedError, e:
+        print "going raw because: %s" % e
+        return create_rawxml(builder)
 
 
 def handle_publishers(top):
@@ -823,6 +870,10 @@ def handle_customworkspace(top):
 
 
 def insert_rawxml(node, output):
+    output.append(create_rawxml(node))
+
+
+def create_rawxml(node):
     import xml.etree.ElementTree as ET
     xml = ET.tostring(node).strip() + '\n'
-    output.append({'raw': {'xml': xml}})
+    return {'raw': {'xml': xml}}
