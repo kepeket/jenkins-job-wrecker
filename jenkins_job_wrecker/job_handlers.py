@@ -547,6 +547,27 @@ def handle_builder(builder):
 
                         triggerConfig['parameter-factories'] = parameterFactories
 
+                    elif propertyNode.tag == 'block':
+                        triggerConfig['block'] = True
+                        blockThresholds = OrderedDict([
+                            ('build-step-failure-threshold', 'never'),
+                            ('unstable-threshold', 'never'),
+                            ('failure-threshold', 'never'),
+                        ])
+                        for threshold in propertyNode:
+                            value = threshold.findtext('name').lower()
+                            if value not in ['never', 'success', 'unstable', 'failure']:
+                                raise NotImplementedError("cannot handle threshold value %s" % value)
+                            if threshold.tag == 'buildStepFailureThreshold':
+                                blockThresholds['build-step-failure-threshold'] = value
+                            elif threshold.tag == 'unstableThreshold':
+                                blockThresholds['unstable-threshold'] = value
+                            elif threshold.tag == 'failureThreshold':
+                                blockThresholds['failure-threshold'] = value
+                            else:
+                                raise NotImplementedError("cannot handle threshold %s" % threshold.tag)
+                        triggerConfig['block-thresholds'] = blockThresholds
+
                     elif propertyNode.tag == 'condition' and propertyNode.text == 'ALWAYS' \
                         or (propertyNode.tag in ['triggerWithNoParameters', 'buildAllNodesWithLabel']
                             and propertyNode.text == 'false'):

@@ -12,3 +12,9 @@
         - factory: filebuild
           file-pattern: job_*.txt
           no-files-found-action: FAIL
+      - project: bar
+        block: true
+        block-thresholds:
+          build-step-failure-threshold: never
+          unstable-threshold: unstable
+          failure-threshold: failure
