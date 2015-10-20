@@ -27,6 +27,9 @@ class TestYAML(object):
     def test_git_browser_githubweb(self):
         self.run_jjw('git-browser-githubweb')
 
+    def test_git_extensions(self):
+        self.run_jjw('git-extensions')
+
     def test_email_ext(self):
         self.run_jjw('email-ext')
 

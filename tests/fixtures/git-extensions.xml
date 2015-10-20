@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project>
+  <scm class="hudson.plugins.git.GitSCM">
+    <extensions>
+      <hudson.plugins.git.extensions.impl.CloneOption>
+        <shallow>true</shallow>
+        <reference>/reference/repo</reference>
+      </hudson.plugins.git.extensions.impl.CloneOption>
+      <hudson.plugins.git.extensions.impl.CleanBeforeCheckout />
+      <hudson.plugins.git.extensions.impl.CleanCheckout />
+      <hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+        <relativeTargetDir>relativeTarget</relativeTargetDir>
+      </hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+      <hudson.plugins.git.extensions.impl.WipeWorkspace />
+    </extensions>
+  </scm>
+</project>

@@ -272,22 +272,32 @@ def handle_scm(top):
                     raise NotImplementedError("cannot handle browser %s" % child.attrib['class'])
 
             elif child.tag == 'extensions':
-                if len(list(child)) == 0 or not list(child[0]):
-                    # This is just an empty <extensions/>. We can skip it.
-                    continue
-                if len(list(child)) != 1:
-                    # hudson.plugins.git.extensions.impl.RelativeTargetDirectory
-                    raise NotImplementedError("%s not supported with %i children"
-                                              % (child.tag, len(list(child))))
-                if len(list(child[0])) != 1:
-                    print list(child[0])
-                    # expected relativeTargetDir
-                    raise NotImplementedError("%s not supported with %i children"
-                                              % (child[0].tag, len(list(child[0]))))
-                if child[0][0].tag != 'relativeTargetDir':
-                    raise NotImplementedError("%s XML not supported"
-                                              % child[0][0].tag)
-                git['basedir'] = child[0][0].text
+                clean = OrderedDict()
+                for ext in child:
+                    if ext.tag == 'hudson.plugins.git.extensions.impl.RelativeTargetDirectory':
+                        git['basedir'] = ext.findtext('relativeTargetDir')
+
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.CloneOption':
+                        if ext.findtext('shallow') == 'true':
+                            git['shallow-clone'] = True
+                        referenceRepo = ext.findtext('reference')
+                        if len(referenceRepo):
+                            git['reference-repo'] = referenceRepo
+
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.CleanBeforeCheckout':
+                        clean['before'] = True
+
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.CleanCheckout':
+                        clean['after'] = True
+
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.WipeWorkspace':
+                        git['wipe-workspace'] = True
+
+                    else:
+                        raise NotImplementedError("cannot handle Git extension %s" % ext.tag)
+
+                if len(clean):
+                    git['clean'] = clean
 
             else:
                 raise NotImplementedError("cannot handle Git option %s" % child.tag)

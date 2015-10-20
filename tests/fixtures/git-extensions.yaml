@@ -1,0 +1,11 @@
+- job:
+    name: git-extensions
+    scm:
+    - git:
+        shallow-clone: true
+        reference-repo: /reference/repo
+        basedir: relativeTarget
+        wipe-workspace: true
+        clean:
+          before: true
+          after: true
