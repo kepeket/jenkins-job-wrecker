@@ -403,13 +403,8 @@ def handle_builders(top):
 
 
 def handle_builder(builder):
-    if 'class' in builder.attrib:
-        builderClass = builder.attrib['class']
-    else:
-        builderClass = builder.tag
-
     try:
-        if builderClass == 'hudson.plugins.copyartifact.CopyArtifact':
+        if builder.tag == 'hudson.plugins.copyartifact.CopyArtifact':
             copyartifact = OrderedDict()
             selectdict = {
                 'StatusBuildSelector': 'last-successful',
@@ -453,7 +448,7 @@ def handle_builder(builder):
                                               "XML %s" % copy_element.tag)
             return {'copyartifact': copyartifact}
 
-        elif builderClass == 'hudson.tasks.Shell':
+        elif builder.tag == 'hudson.tasks.Shell':
             for shell_element in builder:
                 # Assumption: there's only one <command> in this
                 # <hudson.tasks.Shell>
@@ -464,7 +459,7 @@ def handle_builder(builder):
                                               "XML %s" % shell_element.tag)
             return {'shell': shell}
 
-        elif builderClass == 'org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder':
+        elif builder.tag == 'org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder':
             conditional = OrderedDict()
             for item in builder:
                 if item.tag == 'condition':
@@ -496,14 +491,19 @@ def handle_builder(builder):
                         raise NotImplementedError("cannot handle conditional runner %s" % runnerClass)
 
                 elif item.tag == 'buildStep':
-                    conditional['steps'] = [handle_builder(item)]
+                    # Turn the 'buildStep' into a regular builder node, in case it ends up
+                    # emitted as raw XML, because JJB will put back the element name in
+                    # 'class' in that case
+                    builder = item.copy()
+                    builder.tag = builder.attrib.pop('class')
+                    conditional['steps'] = [handle_builder(builder)]
 
                 else:
                     raise NotImplementedError("cannot handle conditional property %s" % item.tag)
 
             return {'conditional-step': conditional}
 
-        elif builderClass == 'hudson.plugins.parameterizedtrigger.TriggerBuilder':
+        elif builder.tag == 'hudson.plugins.parameterizedtrigger.TriggerBuilder':
             triggerConfigs = []
             for configNode in builder.find('configs'):
                 if configNode.tag != 'hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig':
@@ -560,7 +560,7 @@ def handle_builder(builder):
             return {'trigger-builds': triggerConfigs}
 
         else:
-            raise NotImplementedError("cannot handle builder %s" % builderClass)
+            raise NotImplementedError("cannot handle builder %s" % builder.tag)
 
     except NotImplementedError, e:
         print "going raw because: %s" % e

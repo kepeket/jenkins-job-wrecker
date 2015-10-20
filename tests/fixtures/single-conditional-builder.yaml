@@ -21,3 +21,9 @@
         condition-best: UNSTABLE
         steps:
         - shell: ls
+    - conditional-step:
+        condition-kind: always
+        steps:
+        - raw:
+            xml: |
+              <unknown_builder />

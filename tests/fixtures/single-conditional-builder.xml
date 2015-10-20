@@ -42,5 +42,9 @@
         <command>ls</command>
       </buildStep>
     </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
-  </builders>
+    <org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
+      <condition class="org.jenkins_ci.plugins.run_condition.core.AlwaysRun" />
+      <buildStep class="unknown_builder" />
+    </org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder>
+</builders>
 </project>
