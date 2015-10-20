@@ -297,6 +297,9 @@ def handle_scm(top):
                     elif ext.tag == 'hudson.plugins.git.extensions.impl.PerBuildTag':
                         git['skip-tag'] = False
 
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.LocalBranch':
+                        git['local-branch'] = ext.findtext('localBranch')
+
                     else:
                         raise NotImplementedError("cannot handle Git extension %s" % ext.tag)
 

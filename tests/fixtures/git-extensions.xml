@@ -13,6 +13,9 @@
       </hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
       <hudson.plugins.git.extensions.impl.WipeWorkspace />
       <hudson.plugins.git.extensions.impl.PerBuildTag />
+      <hudson.plugins.git.extensions.impl.LocalBranch>
+        <localBranch>local/branch</localBranch>
+      </hudson.plugins.git.extensions.impl.LocalBranch>
     </extensions>
   </scm>
 </project>

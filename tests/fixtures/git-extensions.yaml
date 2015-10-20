@@ -7,6 +7,7 @@
         basedir: relativeTarget
         wipe-workspace: true
         skip-tag: false
+        local-branch: local/branch
         clean:
           before: true
           after: true
