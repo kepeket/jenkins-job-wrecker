@@ -187,9 +187,10 @@ def handle_scm(top):
                 git['wipe-workspace'] = (child.text == 'true')
 
             elif child.tag == 'skipTag':
-                # 'false' is the default and needs no explict YAML.
-                if child.text == 'true':
-                    git['skip-tag'] = True
+                # 'false' is the JJB default. But 'true' is the Jenkins
+                # default!
+                if child.text != 'true':
+                    git['skip-tag'] = False
 
             elif child.tag == 'pruneBranches':
                 # 'false' is the default and needs no explict YAML.
@@ -293,6 +294,9 @@ def handle_scm(top):
                     elif ext.tag == 'hudson.plugins.git.extensions.impl.WipeWorkspace':
                         git['wipe-workspace'] = True
 
+                    elif ext.tag == 'hudson.plugins.git.extensions.impl.PerBuildTag':
+                        git['skip-tag'] = False
+
                     else:
                         raise NotImplementedError("cannot handle Git extension %s" % ext.tag)
 
@@ -305,6 +309,10 @@ def handle_scm(top):
         # JJB defaults wipe-workspace to true, but Jenkins defaults to false
         if 'wipe-workspace' not in git:
             git['wipe-workspace'] = False
+
+        # JJB defaults skip-tag to false, but Jenkins defaults to true
+        if 'skip-tag' not in git:
+            git['skip-tag'] = True
 
         scm.append({'git': git})
     except NotImplementedError, e:

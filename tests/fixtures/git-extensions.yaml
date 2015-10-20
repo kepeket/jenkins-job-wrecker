@@ -6,6 +6,7 @@
         reference-repo: /reference/repo
         basedir: relativeTarget
         wipe-workspace: true
+        skip-tag: false
         clean:
           before: true
           after: true

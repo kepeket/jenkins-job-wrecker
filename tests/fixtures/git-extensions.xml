@@ -12,6 +12,7 @@
         <relativeTargetDir>relativeTarget</relativeTargetDir>
       </hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
       <hudson.plugins.git.extensions.impl.WipeWorkspace />
+      <hudson.plugins.git.extensions.impl.PerBuildTag />
     </extensions>
   </scm>
 </project>
