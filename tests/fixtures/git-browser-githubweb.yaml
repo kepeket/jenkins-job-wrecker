@@ -4,3 +4,4 @@
     - git:
         browser: githubweb
         browser-url: https://github.com/user/project
+        wipe-workspace: false

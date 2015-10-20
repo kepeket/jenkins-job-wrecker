@@ -291,6 +291,11 @@ def handle_scm(top):
 
             else:
                 raise NotImplementedError("cannot handle Git option %s" % child.tag)
+
+        # JJB defaults wipe-workspace to true, but Jenkins defaults to false
+        if 'wipe-workspace' not in git:
+            git['wipe-workspace'] = False
+
         scm.append({'git': git})
     except NotImplementedError, e:
         print "going raw because: %s" % e

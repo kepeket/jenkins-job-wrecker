@@ -12,3 +12,4 @@
         browser: gitblit
         browser-url: https://gerrit/plugins/gitblit/
         project-name: some/project
+        wipe-workspace: false
