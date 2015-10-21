@@ -942,7 +942,27 @@ def handle_buildwrappers(top):
             wrappers.append({'inject': inject})
 
         elif child.tag == 'hudson.plugins.build__timeout.BuildTimeoutWrapper':
-            pass
+            timeout = OrderedDict()
+            for element in child:
+                if element.tag == 'strategy':
+                    if element.attrib['class'] == 'hudson.plugins.build_timeout.impl.AbsoluteTimeOutStrategy':
+                        timeout['type'] = 'absolute'
+                        timeout['timeout'] = int(element.findtext('timeoutMinutes'))
+
+                    else:
+                        raise NotImplementedError("cannot handle BuildTimeoutWrapper strategy %s" % element.attrib['class'])
+
+                elif element.tag == 'operationList':
+                    for operation in element:
+                        if operation.tag == 'hudson.plugins.build__timeout.operations.FailOperation':
+                            timeout['fail'] = True
+
+                        else:
+                            raise NotImplementedError("cannot handle BuildTimeoutWrapper operation %s" % operation.tag)
+
+                else:
+                    raise NotImplementedError("cannot handle BuildTimeoutWrapper child %s" % element.tag)
+            wrappers.append({'timeout': timeout})
 
         elif child.tag == 'hudson.plugins.ansicolor.AnsiColorBuildWrapper':
             wrappers.append({'ansicolor': {'colormap': 'xterm'}})

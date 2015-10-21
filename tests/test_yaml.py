@@ -47,3 +47,6 @@ class TestYAML(object):
 
     def test_slack_disabled(self):
         self.run_jjw('slack-disabled')
+
+    def test_timeout(self):
+        self.run_jjw('timeout')

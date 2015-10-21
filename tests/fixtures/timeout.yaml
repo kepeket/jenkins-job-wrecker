@@ -1,0 +1,7 @@
+- job:
+    name: timeout
+    wrappers:
+    - timeout:
+        type: absolute
+        timeout: 60
+        fail: true
