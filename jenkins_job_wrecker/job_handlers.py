@@ -31,20 +31,73 @@ def handle_keepdependencies(top):
 def handle_properties(top):
     properties = []
     parameters = []
+    result = [['properties', properties], ['parameters', parameters]]
     for child in top:
-        # GitHub
-        if child.tag == 'com.coravy.hudson.plugins.github.GithubProjectProperty':   # NOQA
-            github = handle_github_project_property(child)
-            properties.append(github)
-        # Parameters
-        elif child.tag == 'hudson.model.ParametersDefinitionProperty':
-            parametersdefs = handle_parameters_property(child)
-            for pd in parametersdefs:
-                parameters.append(pd)
-        # A property we don't know about
-        else:
+        try:
+            # GitHub
+            if child.tag == 'com.coravy.hudson.plugins.github.GithubProjectProperty':   # NOQA
+                github = handle_github_project_property(child)
+                properties.append(github)
+
+            # Parameters
+            elif child.tag == 'hudson.model.ParametersDefinitionProperty':
+                parametersdefs = handle_parameters_property(child)
+                for pd in parametersdefs:
+                    parameters.append(pd)
+
+            elif child.tag == 'jenkins.plugins.slack.SlackNotifier_-SlackJobProperty':
+                slack = OrderedDict()
+
+                known_slack_properties = {
+                    'startNotification': 'notify-start',
+                    'notifySuccess': 'notify-success',
+                    'notifyAborted': 'notify-aborted',
+                    'notifyNotBuilt': 'notify-not-built',
+                    'notifyUnstable': 'notify-unstable',
+                    'notifyFailure': 'notify-failure',
+                    'notifyRepeatedFailure': 'notify-repeated-failure',
+                    'notifyBackToNormal': 'notify-back-to-normal',
+                    'includeTestSummary': 'include-test-summary',
+                    'showCommitList': 'show-commit-list',
+                }
+
+                customMessageEnabled = False
+                customMessage = ''
+
+                enableSlack = False
+
+                for slackProp in child:
+                    if slackProp.tag in known_slack_properties:
+                        if slackProp.text == 'true':
+                            slack[known_slack_properties[slackProp.tag]] = True
+                            enableSlack = True
+                    elif slackProp.tag == 'includeCustomMessage':
+                        customMessageEnabled = slackProp.text == 'true'
+                    elif slackProp.tag == 'customMessage':
+                        customMessage = slackProp.text
+                    elif slackProp.tag == 'room':
+                        if slackProp.text:
+                            slack['room'] = slackProp.text
+                    elif slackProp.tag in ['teamDomain', 'token'] and not(slackProp.text) == 0:
+                        pass
+                    else:
+                        raise NotImplementedError("cannot handle Slack property %s" % slackProp.tag)
+
+                if customMessageEnabled:
+                    slack['custom-message'] = customMessage
+
+                if enableSlack:
+                    slack = OrderedDict([('enabled', True)] + slack.items())
+                    result.append(['slack', slack])
+
+            else:
+                raise NotImplementedError("cannot handle property %s" % child.tag)
+
+        except NotImplementedError, e:
+            print "going raw because: %s" % e
             insert_rawxml(child, properties)
-    return [['properties', properties], ['parameters', parameters]]
+
+    return result
 
 
 # Handle "<com.coravy.hudson.plugins.github.GithubProjectProperty>..."
@@ -853,6 +906,10 @@ def handle_publishers(top):
                         raise NotImplementedError("cannot handle "
                                                   "html setting %s" % element.tag)
                 publishers.append({'html-publisher': html_settings})
+
+            elif child.tag == 'jenkins.plugins.slack.SlackNotifier':
+                # Do nothing, it's all handled in the SlackJobProperty
+                pass
 
             else:
                 raise NotImplementedError("cannot handle XML %s" % child.tag)

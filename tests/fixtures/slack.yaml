@@ -1,0 +1,16 @@
+- job:
+    name: slack
+    slack:
+      enabled: true
+      room: '#myroom'
+      notify-start: true
+      notify-success: true
+      notify-aborted: true
+      notify-not-built: true
+      notify-unstable: true
+      notify-failure: true
+      notify-back-to-normal: true
+      notify-repeated-failure: true
+      include-test-summary: true
+      show-commit-list: true
+      custom-message: build $BUILD_NUMBER

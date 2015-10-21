@@ -41,3 +41,9 @@ class TestYAML(object):
 
     def test_trigger_builder(self):
         self.run_jjw('trigger-builder')
+
+    def test_slack(self):
+        self.run_jjw('slack')
+
+    def test_slack_disabled(self):
+        self.run_jjw('slack-disabled')
