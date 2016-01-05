@@ -50,3 +50,6 @@ class TestYAML(object):
 
     def test_timeout(self):
         self.run_jjw('timeout')
+
+    def test_gerrit_trigger(self):
+        self.run_jjw('gerrit-trigger')

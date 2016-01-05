@@ -404,9 +404,16 @@ def handle_triggers(top):
     triggers = []
 
     for child in top:
-        if child.tag == 'hudson.triggers.SCMTrigger':
+        triggers.append(handle_trigger(child))
+
+    return [['triggers', triggers]]
+
+
+def handle_trigger(trigger):
+    try:
+        if trigger.tag == 'hudson.triggers.SCMTrigger':
             pollscm = OrderedDict()
-            for setting in child:
+            for setting in trigger:
                 if setting.tag == 'spec':
                     pollscm['cron'] = setting.text
                 elif setting.tag == 'ignorePostCommitHooks':
@@ -415,12 +422,14 @@ def handle_triggers(top):
                 else:
                     raise NotImplementedError("cannot handle scm trigger "
                                               "setting %s" % setting.tag)
-            triggers.append({'pollscm': pollscm})
-        elif child.tag == 'hudson.triggers.TimerTrigger':
-            triggers.append({'timed': child.findtext('spec')})
-        elif child.tag == 'jenkins.triggers.ReverseBuildTrigger':
+            return {'pollscm': pollscm}
+
+        elif trigger.tag == 'hudson.triggers.TimerTrigger':
+            return {'timed': trigger.findtext('spec')}
+
+        elif trigger.tag == 'jenkins.triggers.ReverseBuildTrigger':
             reverse = OrderedDict()
-            for setting in child:
+            for setting in trigger:
                 if setting.tag == 'upstreamProjects':
                     reverse['jobs'] = setting.text
                 elif setting.tag == 'threshold':
@@ -430,10 +439,72 @@ def handle_triggers(top):
                 else:
                     raise NotImplementedError("cannot handle reverse trigger "
                                               "setting %s" % setting.tag)
-            triggers.append({'reverse': reverse})
+            return {'reverse': reverse}
+
+        elif trigger.tag == 'com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritTrigger':
+            gerrit = OrderedDict()
+            for setting in trigger:
+                if setting.tag == 'gerritProjects':
+                    projects = []
+                    for projectChild in setting:
+                        project = OrderedDict()
+                        project['project-compare-type'] = projectChild.findtext('compareType')
+                        project['project-pattern'] = projectChild.findtext('pattern')
+
+                        branches = []
+                        for branchChild in projectChild.find('branches'):
+                            branch = OrderedDict()
+                            branch['branch-compare-type'] = branchChild.findtext('compareType')
+                            branch['branch-pattern'] = branchChild.findtext('pattern')
+                            branches.append(branch)
+
+                        project['branches'] = branches
+
+                        projects.append(project)
+
+                    gerrit['projects'] = projects
+
+                elif setting.tag == 'triggerOnEvents':
+                    events = []
+                    for eventChild in setting:
+                        event = None
+                        if eventChild.tag == 'com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.events.PluginRefUpdatedEvent':
+                            event = 'ref-updated-event'
+                        elif eventChild.tag == 'com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.events.PluginDraftPublishedEvent':
+                            event = 'draft-published-event'
+                        elif eventChild.tag == 'com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.events.PluginPatchsetCreatedEvent':
+                            event = 'patchset-created-event'
+                            excludes = OrderedDict()
+                            for excludeChild in eventChild:
+                                if excludeChild.tag == 'excludeDrafts':
+                                    if excludeChild.text == 'true':
+                                        excludes['exclude-drafts'] = True
+                                elif excludeChild.tag == 'excludeTrivialRebase':
+                                    if excludeChild.text == 'true':
+                                        excludes['exclude-trivial-rebase'] = True
+                                elif excludeChild.tag == 'excludeNoCodeChange':
+                                    if excludeChild.text == 'true':
+                                        excludes['exclude-no-code-change'] = True
+                            if len(excludes) != 0:
+                                event = OrderedDict([(event, excludes)])
+                        else:
+                            raise NotImplementedError("cannot handle Gerrit event %s" % eventChild.tag)
+
+                        events.append(event)
+
+                    gerrit['trigger-on'] = events
+
+                else:
+                    pass
+
+            return {'gerrit': gerrit}
+
         else:
-            insert_rawxml(child, triggers)
-    return [['triggers', triggers]]
+            raise NotImplementedError("cannot handle trigger %s" % trigger.tag)
+
+    except NotImplementedError, e:
+        print "going raw because: %s" % e
+        return create_rawxml(trigger)
 
 
 def handle_concurrentbuild(top):
@@ -923,11 +994,18 @@ def handle_publishers(top):
 
 def handle_buildwrappers(top):
     wrappers = []
-    for child in top:
 
-        if child.tag == 'EnvInjectPasswordWrapper':
+    for child in top:
+        wrappers.append(handle_buildwrapper(child))
+
+    return [['wrappers', wrappers]]
+
+
+def handle_buildwrapper(wrapper):
+    try:
+        if wrapper.tag == 'EnvInjectPasswordWrapper':
             inject = OrderedDict()
-            for element in child:
+            for element in wrapper:
                 if element.tag == 'injectGlobalPasswords':
                     inject['global'] = (element.text == 'true')
                 elif element.tag == 'maskPasswordParameters':
@@ -939,11 +1017,11 @@ def handle_buildwrappers(top):
                 else:
                     raise NotImplementedError("cannot handle "
                                               "XML %s" % element.tag)
-            wrappers.append({'inject': inject})
+            return {'inject': inject}
 
-        elif child.tag == 'hudson.plugins.build__timeout.BuildTimeoutWrapper':
+        elif wrapper.tag == 'hudson.plugins.build__timeout.BuildTimeoutWrapper':
             timeout = OrderedDict()
-            for element in child:
+            for element in wrapper:
                 if element.tag == 'strategy':
                     if element.attrib['class'] == 'hudson.plugins.build_timeout.impl.AbsoluteTimeOutStrategy':
                         timeout['type'] = 'absolute'
@@ -961,15 +1039,16 @@ def handle_buildwrappers(top):
                             raise NotImplementedError("cannot handle BuildTimeoutWrapper operation %s" % operation.tag)
 
                 else:
-                    raise NotImplementedError("cannot handle BuildTimeoutWrapper child %s" % element.tag)
-            wrappers.append({'timeout': timeout})
+                    raise NotImplementedError("cannot handle BuildTimeoutWrapper wrapper %s" % element.tag)
 
-        elif child.tag == 'hudson.plugins.ansicolor.AnsiColorBuildWrapper':
-            wrappers.append({'ansicolor': {'colormap': 'xterm'}})
+            return {'timeout': timeout}
 
-        elif child.tag == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper':    # NOQA
+        elif wrapper.tag == 'hudson.plugins.ansicolor.AnsiColorBuildWrapper':
+            return {'ansicolor': {'colormap': 'xterm'}}
+
+        elif wrapper.tag == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper':    # NOQA
             ssh_agents = OrderedDict()
-            for element in child:
+            for element in wrapper:
                 if element.tag == 'credentialIds':
                     keys = []
                     for key in element:
@@ -980,13 +1059,18 @@ def handle_buildwrappers(top):
                 else:
                     raise NotImplementedError("cannot handle "
                                               "XML %s" % element.tag)
-            wrappers.append({'ssh-agent-credentials': ssh_agents})
 
-        elif child.tag == 'org.jenkinsci.plugins.buildnamesetter.BuildNameSetter':  # NOQA
-            wrappers.append({'build-name': {'name': child[0].text}})
+            return {'ssh-agent-credentials': ssh_agents}
+
+        elif wrapper.tag == 'org.jenkinsci.plugins.buildnamesetter.BuildNameSetter':  # NOQA
+            return {'build-name': {'name': wrapper[0].text}}
+
         else:
-            insert_rawxml(child, wrappers)
-    return [['wrappers', wrappers]]
+            raise NotImplementedError("cannot handle XML %s" % wrapper.tag)
+
+    except NotImplementedError, e:
+        print "going raw because: %s" % e
+        return create_rawxml(wrapper)
 
 
 def handle_executionstrategy(top):

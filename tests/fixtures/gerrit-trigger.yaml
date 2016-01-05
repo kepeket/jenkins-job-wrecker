@@ -1,0 +1,17 @@
+- job:
+    name: gerrit-trigger
+    triggers:
+    - gerrit:
+        projects:
+        - project-compare-type: PLAIN
+          project-pattern: some/project
+          branches:
+          - branch-compare-type: PLAIN
+            branch-pattern: master
+          - branch-compare-type: ANT
+            branch-pattern: refs/tags/*
+        trigger-on:
+        - ref-updated-event
+        - patchset-created-event:
+            exclude-drafts: true
+        - draft-published-event
