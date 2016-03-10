@@ -1,10 +1,22 @@
 import logging
 import re
+import pprint
 from collections import OrderedDict
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+from copy import deepcopy
+def dict_merge(a, b):
+    if not isinstance(b, dict):
+        return b
+    result = OrderedDict(deepcopy(a))
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+            result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = deepcopy(v)
+    return result
 
 # Handle "<actions/>"
 def handle_actions(top):
@@ -44,7 +56,13 @@ def handle_properties(top):
                 parametersdefs = handle_parameters_property(child)
                 for pd in parametersdefs:
                     parameters.append(pd)
-
+            elif child.tag == 'com.sonyericsson.rebuild.RebuildSettings':
+                rebuild = handle_rebuild_settings_property(child)
+                properties.append(rebuild)
+            elif child.tag == 'hudson.plugins.copyartifact.CopyArtifactPermissionProperty':
+                copy_artifact = handle_copy_artifact_property(child)
+                properties.append(copy_artifact)
+                    
             elif child.tag == 'jenkins.plugins.slack.SlackNotifier_-SlackJobProperty':
                 slack = OrderedDict()
 
@@ -109,6 +127,36 @@ def handle_github_project_property(top):
         else:
             raise NotImplementedError("cannot handle XML %s" % child.tag)
     return {'github': github}
+
+# Handle "<hudson.plugins.copyartifact.CopyArtifactPermissionProperty>..."
+def handle_copy_artifact_property(top):
+    copy_artifact = OrderedDict()
+    projects = []
+    for child in top:
+        if child.tag == 'projectNameList':
+            for c in child:
+                if c.tag == 'string':
+                    projects.append(c.text)
+                else:
+                    raise NotImplementedError("cannot handle copy artifact project \
+                    of type %s" % c.tag)
+            copy_artifact['projects'] = ','.join(projects)
+        else:
+            raise NotImplementedError("cannot handle XML %s" % child.tag)
+    return {'copyartifact': copy_artifact}
+
+
+# Handle "<com.sonyericsson.rebuild.RebuildSettings>..."
+def handle_rebuild_settings_property(top):
+    rebuild = OrderedDict()
+    for child in top:
+        if child.tag == 'autoRebuild':
+            rebuild['auto-rebuild'] = child.text == 'true'
+        elif child.tag == 'rebuildDisabled':
+            rebuild['rebuild-disabled'] = child.text == 'true'
+        else:
+            raise NotImplementedError("cannot handle XML %s" % child.tag)
+    return {'rebuild': rebuild}
 
 
 # Handle "<hudson.model.ParametersDefinitionProperty>..."
@@ -977,6 +1025,47 @@ def handle_publishers(top):
                         raise NotImplementedError("cannot handle "
                                                   "html setting %s" % element.tag)
                 publishers.append({'html-publisher': html_settings})
+            elif child.tag == 'hudson.plugins.cobertura.CoberturaPublisher':
+                cobertura = OrderedDict()
+                targets = {'healthyTarget': 'healthy',
+                           'unhealthyTarget': 'unhealthy',
+                           'failingTarget': 'failing'}
+                targetList = {}
+                for param in child:
+                    if param.tag == 'coberturaReportFile':
+                        cobertura['report-file'] = param.text
+                    elif param.tag == 'onlyStable':
+                        cobertura['only-stable'] = param.text == 'true'
+                    elif param.tag == 'failUnhealthy':
+                        cobertura['fail-unhealthy'] = param.text == 'true'
+                    elif param.tag == 'failUnstable':
+                        cobertura['fail-unstable'] = param.text == 'true'
+                    elif param.tag == 'autoUpdateHealth':
+                        cobertura['health-auto-update'] = param.text == 'true'
+                    elif param.tag == 'autoUpdateStability':
+                        cobertura['stability-auto-update'] = param.text == 'true'
+                    elif param.tag == 'zoomCoverageChart':
+                        cobertura['zoom-coverage-chart'] = param.text == 'true'
+                    elif param.tag == 'failNoReports':
+                        cobertura['fail-no-report'] = param.text == 'true'
+                    elif param.tag == 'sourceEncoding':
+                        cobertura['source-encoding'] = param.text
+                    elif param.tag in targets.keys():
+                        if 'targets' not in cobertura:
+                            cobertura['targets'] = []
+                        try:
+                            for te in param.findall('targets/entry'):
+                                metric = te.find('hudson.plugins.cobertura.targets.CoverageMetric')
+                                number = te.find('int')
+                                if metric.text.lower() not in targetList.keys():
+                                    targetList[metric.text.lower()] = {}
+                                targetList[metric.text.lower()] = dict_merge(targetList[metric.text.lower()],  {targets[param.tag]: int(number.text)})
+                        except KeyError, e:
+                            print("cannot handle XML %s" % param.tag)
+                            raise e
+                for tl, tldef in targetList.items():
+                    cobertura['targets'].append({tl: tldef})
+                publishers.append({'cobertura': cobertura})
 
             elif child.tag == 'jenkins.plugins.slack.SlackNotifier':
                 # Do nothing, it's all handled in the SlackJobProperty
